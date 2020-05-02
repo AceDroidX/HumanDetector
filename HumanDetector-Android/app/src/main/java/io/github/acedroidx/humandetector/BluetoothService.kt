@@ -7,11 +7,14 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.*
 import android.os.Process.THREAD_PRIORITY_BACKGROUND
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import java.nio.charset.StandardCharsets
 import java.util.*
 
@@ -21,7 +24,7 @@ class BluetoothService : Service() {
     private var serviceHandler: ServiceHandler? = null
     var btdevice: BluetoothDevice? = null
     var btsocket: BluetoothSocket? = null
-    //private var state: Boolean = false
+    private var state: Boolean = false
 
     private inner class ServiceHandler(looper: Looper) : Handler(looper) {
 
@@ -29,6 +32,7 @@ class BluetoothService : Service() {
             // Normally we would do some work here, like download a file.
             // For our sample, we just sleep for 5 seconds.
             try {
+                state = true
                 val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
                 if (bluetoothAdapter == null) {
                     // Device doesn't support Bluetooth
@@ -76,15 +80,47 @@ class BluetoothService : Service() {
                         Thread.sleep(100)
                         val buffer = ByteArray(btsocket?.inputStream?.available()!!)
                         btsocket?.inputStream?.read(buffer)
-                        toast(String(buffer, StandardCharsets.UTF_8))
-                        Log.d("test", String(buffer, StandardCharsets.UTF_8))
+                        var recivedstr = String(buffer, StandardCharsets.UTF_8)
+                        if (recivedstr == "warning\n") {
+                            val pendingIntent: PendingIntent =
+                                Intent(
+                                    this@BluetoothService,
+                                    MainActivity::class.java
+                                ).let { notificationIntent ->
+                                    PendingIntent.getActivity(
+                                        this@BluetoothService,
+                                        0,
+                                        notificationIntent,
+                                        0
+                                    )
+                                }
+                            val bitmap = BitmapFactory.decodeResource(resources, R.drawable.ddd)
+                            val notification: Notification =
+                                NotificationCompat.Builder(this@BluetoothService, "warning")
+                                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                                    .setLargeIcon(bitmap)
+                                    .setContentTitle("警报")
+                                    .setContentText("人体检测警报")
+                                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                                    //.setTicker("悬浮通知")
+                                    .setContentIntent(pendingIntent)
+                                    //.setVibrate(longArrayOf(1000, 1000, 1000, 1000, 1000))
+                                    //.setLights(Color.RED, 3000, 3000)
+                                    .build()
+                            with(NotificationManagerCompat.from(this@BluetoothService)) {
+                                // notificationId is a unique int for each notification that you must define
+                                notify(2, notification)
+                            }
+                        }
+                        toast(recivedstr)
+                        Log.d("test", recivedstr)
                     }
                     Thread.sleep(100)
                 }
             } catch (e: InterruptedException) {
                 // Restore interrupt status.
+                toast("error:$e")
                 Thread.currentThread().interrupt()
-                Toast.makeText(this@BluetoothService, "error:$e", Toast.LENGTH_SHORT).show()
             }
 
             // Stop the service using the startId, so that we don't stop
@@ -116,6 +152,9 @@ class BluetoothService : Service() {
             .build()
         startForeground(1, notification);
         Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show()
+        if (state) {
+            toast("服务已启动");return START_STICKY
+        }
         serviceHandler?.obtainMessage()?.also { msg ->
             msg.arg1 = startId
             if (intent != null) {
@@ -139,7 +178,7 @@ class BluetoothService : Service() {
 
     fun toast(str: String) {
         Handler(Looper.getMainLooper()).post {
-            Log.d("toast-btservice",str)
+            Log.d("toast-btservice", str)
             Toast.makeText(this@BluetoothService, str, Toast.LENGTH_SHORT).show()
         }
     }
