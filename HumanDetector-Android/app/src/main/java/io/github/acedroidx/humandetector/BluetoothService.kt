@@ -77,7 +77,7 @@ class BluetoothService : Service() {
                 while (true) {
                     if (!btsocket?.isConnected!!) return
                     if (btsocket?.inputStream?.available()!! > 0) {
-                        Thread.sleep(100)
+                        Thread.sleep(10)
                         val buffer = ByteArray(btsocket?.inputStream?.available()!!)
                         btsocket?.inputStream?.read(buffer)
                         var recivedstr = String(buffer, StandardCharsets.UTF_8)
@@ -115,12 +115,16 @@ class BluetoothService : Service() {
                         toast(recivedstr)
                         Log.d("test", recivedstr)
                     }
-                    Thread.sleep(100)
+                    Thread.sleep(10)
                 }
-            } catch (e: InterruptedException) {
-                // Restore interrupt status.
-                toast("error:$e")
-                Thread.currentThread().interrupt()
+            } catch (e: Exception) {
+                state=false
+                Handler(Looper.getMainLooper()).post {
+                    e.printStackTrace()
+                    Toast.makeText(this@BluetoothService, "连接失败:$e", Toast.LENGTH_LONG).show()
+                }
+                stopSelf(msg.arg1)
+                //Thread.currentThread().interrupt()
             }
 
             // Stop the service using the startId, so that we don't stop
@@ -151,7 +155,7 @@ class BluetoothService : Service() {
             .setContentIntent(pendingIntent)
             .build()
         startForeground(1, notification);
-        Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show()
         if (state) {
             toast("服务已启动");return START_STICKY
         }
@@ -172,7 +176,7 @@ class BluetoothService : Service() {
     override fun onDestroy() {
         if (btsocket != null) btsocket!!.close()
         stopForeground(true)
-        Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show()
         super.onDestroy()
     }
 

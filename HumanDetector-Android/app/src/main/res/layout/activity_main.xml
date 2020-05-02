@@ -31,7 +31,7 @@
         android:id="@+id/bt_devices_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:visibility="gone" />
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/start_service_button"

@@ -17,7 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 
 class MainActivity : AppCompatActivity() {
-    lateinit var btdevice:BluetoothDevice
+    var btdevice:BluetoothDevice?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +60,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     public fun setupBT(view: View) {
+        var listView = findViewById<ListView>(R.id.bt_devices_list)
+        if(listView.visibility==VISIBLE){
+            listView.visibility=GONE
+            return
+        }
         val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
         if (bluetoothAdapter == null) {
             // Device doesn't support Bluetooth
@@ -77,7 +82,6 @@ class MainActivity : AppCompatActivity() {
             array.add(deviceName+"    "+deviceHardwareAddress)
         }
         var btdevicetext=findViewById<TextView>(R.id.btdevice_text)
-        var listView = findViewById<ListView>(R.id.bt_devices_list)
         listView.setAdapter(
             ArrayAdapter<String>(
                 this,
@@ -103,9 +107,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     public fun startBGService(view: View) {
+        if (btdevice==null){
+            Toast.makeText(this, "请先选择要连接的蓝牙设备", Toast.LENGTH_SHORT).show()
+            return
+        }
         var intent=Intent(this, BluetoothService::class.java)
-        intent.putExtra("name",btdevice.name)
-        intent.putExtra("mac",btdevice.address)
+        intent.putExtra("name", btdevice!!.name)
+        intent.putExtra("mac", btdevice!!.address)
         val bgservice = startService(intent)
     }
 
