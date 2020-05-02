@@ -1,17 +1,23 @@
 package io.github.acedroidx.humandetector
 
-import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
 
 class MainActivity : AppCompatActivity() {
+    lateinit var btdevice:BluetoothDevice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,11 +42,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    public fun startBGService(view: View) {
-        val bgservice = Intent(this, BluetoothService::class.java).also { intent ->
-            startService(intent)
+    public fun setupBT(view: View) {
+        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter == null) {
+            // Device doesn't support Bluetooth
         }
+        if (bluetoothAdapter?.isEnabled == false) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, 1)
+        }
+        val array = ArrayList<String>()
+        val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+        pairedDevices?.forEach { device ->
+            val deviceName = device.name
+            val deviceHardwareAddress = device.address // MAC address
+            Log.d("test", deviceName)
+            array.add(deviceName+"    "+deviceHardwareAddress)
+        }
+        var btdevicetext=findViewById<TextView>(R.id.btdevice_text)
+        var listView = findViewById<ListView>(R.id.bt_devices_list)
+        listView.setAdapter(
+            ArrayAdapter<String>(
+                this,
+                android.R.layout.simple_list_item_1,
+                array
+            )
+        )
+        listView.setOnItemClickListener { parent, view, position, id ->
+            var result = parent.getItemAtPosition (position).toString();//获取选择项的值
+            //Toast.makeText(this, "您点击了" + result, Toast.LENGTH_SHORT).show();
+            pairedDevices?.forEach { device ->
+                val deviceName = device.name
+                val deviceHardwareAddress = device.address // MAC address
+                if (deviceName+"    "+deviceHardwareAddress==result){
+                    btdevice=device
+                    listView.visibility=GONE
+                    btdevicetext.text=deviceName
+                    return@forEach
+                }
+            }
+        }
+        listView.visibility=VISIBLE
     }
+
+    public fun startBGService(view: View) {
+        var intent=Intent(this, BluetoothService::class.java)
+        intent.putExtra("name",btdevice.name)
+        intent.putExtra("mac",btdevice.address)
+        val bgservice = startService(intent)
+    }
+
     public fun stopBGService(view: View) {
         val bgservice = Intent(this, BluetoothService::class.java).also { intent ->
             stopService(intent)

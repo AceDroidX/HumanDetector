@@ -7,6 +7,32 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/setup_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="setupBT"
+            android:text="设置蓝牙" />
+
+        <TextView
+            android:id="@+id/btdevice_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/bt_devices_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:visibility="gone" />
+
     <Button
         android:id="@+id/start_service_button"
         android:layout_width="wrap_content"
@@ -15,7 +41,7 @@
         android:text="开启服务" />
 
     <Button
-        android:id="@+id/start_service_button2"
+        android:id="@+id/stop_service_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="stopBGService"
